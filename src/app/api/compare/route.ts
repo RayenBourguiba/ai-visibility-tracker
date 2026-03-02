@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { computeRunScore } from "@/lib/summary/consolidate";
+import type { Result } from "@prisma/client";
 
 function indexByPrompt(results: any[]) {
   const m = new Map<string, any>();
@@ -36,9 +37,8 @@ export async function GET(req: Request) {
   const totalA = A.results.length || 1;
   const totalB = B.results.length || 1;
 
-  const mentionRateA = Math.round((A.results.filter((r) => r.isMentioned).length / totalA) * 100);
-  const mentionRateB = Math.round((B.results.filter((r) => r.isMentioned).length / totalB) * 100);
-
+const mentionRateA = Math.round((A.results.filter((r: Result) => r.isMentioned).length / totalA) * 100);
+const mentionRateB = Math.round((B.results.filter((r: Result) => r.isMentioned).length / totalB) * 100);
   const mapA = indexByPrompt(A.results);
   const mapB = indexByPrompt(B.results);
 
