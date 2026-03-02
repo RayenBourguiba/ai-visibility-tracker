@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { ask } from "@/lib/llm";
 import type { Engine } from "@/lib/llm/types";
 import { basicAnalyze } from "@/lib/analyze/basic";
+import { analyzeVisibilityWithOpenAI } from "@/lib/analyze/structuredOpenAI";
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +12,10 @@ export async function POST(req: Request) {
     const engine = String(body.engine || "OPENAI") as Engine;
 
     if (!projectId) {
-      return NextResponse.json({ error: "projectId required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "projectId required" },
+        { status: 400 },
+      );
     }
 
     const project = await prisma.project.findUnique({
@@ -19,7 +23,8 @@ export async function POST(req: Request) {
       include: { prompts: { orderBy: { createdAt: "asc" } } },
     });
 
-    if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!project)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const run = await prisma.run.create({
       data: {
@@ -44,33 +49,35 @@ export async function POST(req: Request) {
     for (const p of project.prompts) {
       const { text: answer } = await ask(engine, { prompt: p.text, system });
 
-      const analysis = basicAnalyze({
-        answer,
+      const analysis = await analyzeVisibilityWithOpenAI({
+        language: project.language as "fr" | "en",
         brandName: project.brandName,
         domain: project.domain,
+        prompt: p.text,
+        answer,
       });
 
       await prisma.result.upsert({
         where: { runId_promptId: { runId: run.id, promptId: p.id } },
         update: {
           rawAnswer: answer,
-          isMentioned: analysis.isMentioned,
-          position: analysis.position ?? null,
-          contextSnippets: analysis.contextSnippets,
-          competitors: analysis.competitors,
+          isMentioned: analysis.brand_mentioned,
+          position: analysis.brand_position,
+          contextSnippets: analysis.context_snippets,
+          competitors: analysis.competitors_before,
           scores: analysis.scores,
-          recommendations: [],
+          recommendations: analysis.recommendations,
         },
         create: {
           runId: run.id,
           promptId: p.id,
           rawAnswer: answer,
-          isMentioned: analysis.isMentioned,
-          position: analysis.position ?? null,
-          contextSnippets: analysis.contextSnippets,
-          competitors: analysis.competitors,
+          isMentioned: analysis.brand_mentioned,
+          position: analysis.brand_position,
+          contextSnippets: analysis.context_snippets,
+          competitors: analysis.competitors_before,
           scores: analysis.scores,
-          recommendations: [],
+          recommendations: analysis.recommendations,
         },
       });
     }
