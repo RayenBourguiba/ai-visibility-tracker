@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Engine {
+  OPENAI
+  GEMINI
+  PERPLEXITY
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model Project {
+  id         String   @id @default(cuid())
+  domain     String
+  brandName  String
+  language   String   @default("fr")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  prompts    Prompt[]
+  runs       Run[]
+
+  @@index([domain])
+}
+
+model Prompt {
+  id         String   @id @default(cuid())
+  projectId  String
+  text       String
+  category   String
+  createdAt  DateTime @default(now())
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  results    Result[]
+
+  @@index([projectId])
+}
+
+model Run {
+  id         String    @id @default(cuid())
+  projectId  String
+  engine     Engine
+  model      String?
+  status     RunStatus @default(PENDING)
+  error      String?
+  createdAt  DateTime  @default(now())
+
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  results    Result[]
+
+  @@index([projectId, createdAt])
+  @@index([engine, createdAt])
+}
+
+model Result {
+  id              String   @id @default(cuid())
+  runId           String
+  promptId        String
+  rawAnswer       String
+
+  // Analyse structurée (JSON pour aller vite)
+  isMentioned     Boolean
+  position        Int?
+  contextSnippets Json?
+  competitors     Json?
+  scores          Json?
+  recommendations Json?
+
+  createdAt       DateTime @default(now())
+
+  run             Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  prompt           Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, promptId])
+  @@index([promptId])
+}
