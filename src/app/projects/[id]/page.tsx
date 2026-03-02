@@ -1,3 +1,5 @@
+import ProjectTrends from "@/components/charts/ProjectTrends";
+import LastRunsByEngine from "@/components/projects/LastRunsByEngine";
 import { prisma } from "@/lib/db/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -69,7 +71,13 @@ export default async function ProjectPage({
           </table>
         </div>
       </section>
+      <section className="mt-10">
+        <LastRunsByEngine projectId={project.id} />
+      </section>
 
+      <section className="mt-10">
+        <ProjectTrends projectId={project.id} />
+      </section>
       <section className="mt-10">
         <h2 className="text-lg font-medium">
           Historique des runs (placeholder)
