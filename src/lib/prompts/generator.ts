@@ -1,4 +1,5 @@
 import { PROMPT_TEMPLATES_EN, PROMPT_TEMPLATES_FR, PromptTemplate } from "./templates";
+import type { PromptSetKey } from "./sets";
 
 type GeneratePromptsInput = {
   domain: string;
@@ -47,19 +48,26 @@ export function generatePrompts(input: GeneratePromptsInput) {
     sector,
   };
 
-  const out: { text: string; category: string }[] = [];
+  const out: { text: string; category: string; setKey: PromptSetKey }[] = [];
 
   for (const t of templates) {
     if (t.text.includes("{{problem}}")) {
       for (const p of problems.slice(0, 3)) {
-        out.push({ category: t.category, text: fillTemplate(t.text, { ...baseVars, problem: p }) });
+        out.push({
+          setKey: t.setKey,
+          category: t.category,
+          text: fillTemplate(t.text, { ...baseVars, problem: p }),
+        });
       }
     } else {
-      out.push({ category: t.category, text: fillTemplate(t.text, baseVars) });
+      out.push({
+        setKey: t.setKey,
+        category: t.category,
+        text: fillTemplate(t.text, baseVars),
+      });
     }
   }
 
-  // Petites variantes “brand+domain” (utile pour mentions exactes)
   const extra =
     input.language === "fr"
       ? [
@@ -71,7 +79,7 @@ export function generatePrompts(input: GeneratePromptsInput) {
           `List reliable sources about ${input.brandName}.`,
         ];
 
-  for (const e of extra) out.push({ category: "discovery", text: e });
+  for (const e of extra) out.push({ setKey: "core", category: "discovery", text: e });
 
   // Dédupe simple
   const seen = new Set<string>();

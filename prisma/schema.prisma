@@ -45,12 +45,14 @@ model Prompt {
   projectId  String
   text       String
   category   String
+  setKey     String   @default("core")
   createdAt  DateTime @default(now())
 
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   results    Result[]
 
   @@index([projectId])
+  @@index([projectId, setKey])
 }
 
 model Run {

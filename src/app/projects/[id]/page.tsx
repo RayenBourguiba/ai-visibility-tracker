@@ -3,7 +3,7 @@ import LastRunsByEngine from "@/components/projects/LastRunsByEngine";
 import { prisma } from "@/lib/db/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import RunButton from "@/components/projects/RunButton";
+import ProjectPromptsPanel from "@/components/projects/ProjectPromptsPanel";
 
 export default async function ProjectPage({
   params,
@@ -36,7 +36,6 @@ export default async function ProjectPage({
         </div>
 
         <div className="flex gap-3">
-          <RunButton projectId={project.id} />{" "}
           <Link
             href="/"
             className="rounded-md bg-black px-4 py-2 text-sm text-white"
@@ -45,36 +44,19 @@ export default async function ProjectPage({
           </Link>
         </div>
       </div>
-
-      <section className="mt-8">
-        <h2 className="text-lg font-medium">
-          Prompts générés ({project.prompts.length})
-        </h2>
-        <div className="mt-3 overflow-hidden rounded-xl border">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left">
-              <tr>
-                <th className="px-4 py-3">Catégorie</th>
-                <th className="px-4 py-3">Prompt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {project.prompts.map((p) => (
-                <tr key={p.id} className="border-t">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                    {p.category}
-                  </td>
-                  <td className="px-4 py-3">{p.text}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <ProjectPromptsPanel
+        projectId={project.id}
+        language={project.language as "fr" | "en"}
+        prompts={project.prompts.map((p) => ({
+          id: p.id,
+          text: p.text,
+          category: p.category,
+          setKey: p.setKey,
+        }))}
+      />{" "}
       <section className="mt-10">
         <LastRunsByEngine projectId={project.id} />
       </section>
-
       <section className="mt-10">
         <ProjectTrends projectId={project.id} />
       </section>

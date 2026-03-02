@@ -3,10 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function RunButton({ projectId }: { projectId: string }) {
+export default function RunButton({
+  projectId,
+  promptSetKey,
+}: {
+  projectId: string;
+  promptSetKey?: string | null;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [engine, setEngine] = useState<"OPENAI" | "GEMINI" | "PERPLEXITY">("OPENAI");
+  const [engine, setEngine] = useState<"OPENAI" | "GEMINI" | "PERPLEXITY">(
+    "OPENAI",
+  );
   const [err, setErr] = useState<string | null>(null);
 
   async function launch() {
@@ -16,7 +24,7 @@ export default function RunButton({ projectId }: { projectId: string }) {
       const res = await fetch("/api/runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, engine }),
+        body: JSON.stringify({ projectId, engine, promptSetKey: promptSetKey || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {

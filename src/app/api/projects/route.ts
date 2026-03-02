@@ -24,6 +24,7 @@ export async function POST(req: Request) {
           create: prompts.map((p) => ({
             text: p.text,
             category: p.category,
+            setKey: p.setKey,
           })),
         },
       },
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
     if (err?.name === "ZodError") {
       return NextResponse.json(
         { error: "Validation error", details: err.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
     console.error(err);

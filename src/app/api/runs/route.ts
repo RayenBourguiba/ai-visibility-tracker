@@ -10,6 +10,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const projectId = String(body.projectId || "");
     const engine = String(body.engine || "OPENAI") as Engine;
+    const promptSetKey = body.promptSetKey ? String(body.promptSetKey) : null;
 
     if (!projectId) {
       return NextResponse.json(
@@ -20,11 +21,17 @@ export async function POST(req: Request) {
 
     const project = await prisma.project.findUnique({
       where: { id: projectId },
-      include: { prompts: { orderBy: { createdAt: "asc" } } },
     });
-
     if (!project)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    const prompts = await prisma.prompt.findMany({
+      where: {
+        projectId: project.id,
+        ...(promptSetKey ? { setKey: promptSetKey } : {}),
+      },
+      orderBy: { createdAt: "asc" },
+    });
 
     const run = await prisma.run.create({
       data: {
@@ -46,7 +53,7 @@ export async function POST(req: Request) {
         : "You are a helpful assistant. Answer in a structured and concrete way.";
 
     // Exécution séquentielle (MVP). On parallélisera plus tard si besoin.
-    for (const p of project.prompts) {
+    for (const p of prompts) {
       const { text: answer } = await ask(engine, { prompt: p.text, system });
 
       const analysis = await analyzeVisibilityWithOpenAI({
