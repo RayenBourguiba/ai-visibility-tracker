@@ -25,24 +25,43 @@ export default async function ProjectPage({
   if (!project) return notFound();
 
   return (
-    <main className="mx-auto max-w-5xl p-6">
-      <div className="flex items-start justify-between gap-6">
+    <main style={{ maxWidth: "920px", margin: "0 auto", padding: "3rem 2rem" }}>
+      {" "}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "1.5rem",
+          marginBottom: "2.5rem",
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-semibold">{project.brandName}</h1>
-          <p className="mt-1 text-gray-600">
-            Domaine: <span className="font-mono">{project.domain}</span> •
-            Langue: <span className="font-mono">{project.language}</span>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "2rem",
+              fontWeight: 800,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.03em",
+            }}
+          >
+            {project.brandName}
+          </h1>
+          <p
+            style={{
+              fontSize: "0.78rem",
+              color: "var(--text-secondary)",
+              marginTop: "0.35rem",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            Domaine: {project.domain} • Langue: {project.language}
           </p>
         </div>
-
-        <div className="flex gap-3">
-          <Link
-            href="/"
-            className="rounded-md bg-black px-4 py-2 text-sm text-white"
-          >
-            Nouveau projet
-          </Link>
-        </div>
+        <Link href="/" className="btn btn-ghost">
+          + Nouveau projet
+        </Link>
       </div>
       <ProjectPromptsPanel
         projectId={project.id}
@@ -54,36 +73,81 @@ export default async function ProjectPage({
           setKey: p.setKey,
         }))}
       />{" "}
-      <section className="mt-10">
+      <section style={{ marginTop: "2.5rem" }}>
         <LastRunsByEngine projectId={project.id} />
       </section>
-      <section className="mt-10">
+      <section style={{ marginTop: "2.5rem" }}>
         <ProjectTrends projectId={project.id} />
-      </section>
-      <section className="mt-10">
-        <h2 className="text-lg font-medium">
-          Historique des runs (placeholder)
-        </h2>
-        <p className="mt-2 text-sm text-gray-600">
-          À la prochaine étape, on ajoute{" "}
-          <span className="font-mono">/api/runs</span> + l’écran run.
-        </p>
-
-        <div className="mt-3 rounded-xl border p-4 text-sm text-gray-700">
-          {project.runs.length === 0 ? (
-            <p>Aucun run pour le moment.</p>
-          ) : (
-            <ul className="space-y-2">
-              {project.runs.map((r) => (
-                <li key={r.id} className="flex items-center justify-between">
-                  <span className="font-mono">{r.engine}</span>
-                  <span className="text-gray-600">
-                    {new Date(r.createdAt).toLocaleString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+      </section>{" "}
+      <section style={{ marginTop: "2.5rem", paddingBottom: "4rem" }}>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1.5px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "1.75rem 2rem",
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "1rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+              marginBottom: "0.75rem",
+            }}
+          >
+            Historique des runs
+          </div>
+          <p
+            style={{
+              fontSize: "0.78rem",
+              color: "var(--text-secondary)",
+              fontFamily: "var(--font-mono)",
+              marginBottom: "1rem",
+            }}
+          >
+            À la prochaine étape, on ajoute{" "}
+            <code style={{ color: "var(--accent)" }}>/api/runs</code> + l'écran
+            run.
+          </p>
+          <div
+            style={{
+              background: "var(--bg-raised)",
+              border: "1.5px solid var(--border)",
+              borderRadius: "var(--radius-md)",
+              padding: "1rem 1.5rem",
+              fontSize: "0.82rem",
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {project.runs.length === 0 ? (
+              <p>Aucun run pour le moment.</p>
+            ) : (
+              <ul
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                {project.runs.map((r) => (
+                  <li
+                    key={r.id}
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <span>{r.engine}</span>
+                    <span style={{ color: "var(--text-muted)" }}>
+                      {new Date(r.createdAt).toLocaleString()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </section>
     </main>

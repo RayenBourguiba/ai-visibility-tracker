@@ -5,12 +5,12 @@ export default function ExportButtons({ runId }: { runId: string }) {
   const csvUrl = `/api/runs/${runId}/export?format=csv`;
 
   return (
-    <div className="flex gap-2">
-      <a className="rounded-md border px-3 py-2 text-sm" href={jsonUrl} target="_blank" rel="noreferrer">
-        Export JSON
+    <div style={{ display: "flex", gap: "0.6rem" }}>
+      <a className="btn btn-ghost" href={jsonUrl} target="_blank" rel="noreferrer">
+        ↓ JSON
       </a>
-      <a className="rounded-md border px-3 py-2 text-sm" href={csvUrl} target="_blank" rel="noreferrer">
-        Export CSV
+      <a className="btn btn-ghost" href={csvUrl} target="_blank" rel="noreferrer">
+        ↓ CSV
       </a>
     </div>
   );

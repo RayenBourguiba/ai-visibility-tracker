@@ -2,14 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  CartesianGrid,
+  LineChart, Line, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, Legend, CartesianGrid,
 } from "recharts";
 
 type Point = {
@@ -28,6 +22,29 @@ function formatDate(d: string) {
     dt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
+const cardStyle: React.CSSProperties = {
+  background: "var(--bg-surface)",
+  border: "1.5px solid var(--border)",
+  borderRadius: "var(--radius-lg)",
+  padding: "1.75rem 2rem",
+  boxShadow: "var(--shadow-sm)",
+};
+
+const titleStyle: React.CSSProperties = {
+  fontFamily: "var(--font-display)",
+  fontSize: "1rem",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+  letterSpacing: "-0.01em",
+};
+
+const subtitleStyle: React.CSSProperties = {
+  fontSize: "0.75rem",
+  color: "var(--text-secondary)",
+  fontFamily: "var(--font-mono)",
+  marginTop: "0.25rem",
+};
+
 export default function ProjectTrends({ projectId }: { projectId: string }) {
   const [data, setData] = useState<Point[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,7 +60,6 @@ export default function ProjectTrends({ projectId }: { projectId: string }) {
         const json = await res.json();
         if (!res.ok) throw new Error(json?.error || "Error");
         if (!mounted) return;
-
         const series: Point[] = (json.series || []).map((p: any) => ({
           ...p,
           createdAt: new Date(p.createdAt).toISOString(),
@@ -55,45 +71,88 @@ export default function ProjectTrends({ projectId }: { projectId: string }) {
         if (mounted) setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [projectId]);
 
   const filtered = useMemo(() => {
     const ok = data.filter((p) => p.status === "SUCCESS");
-    if (engine === "ALL") return ok;
-    return ok.filter((p) => p.engine === engine);
+    return engine === "ALL" ? ok : ok.filter((p) => p.engine === engine);
   }, [data, engine]);
 
-  // Recharts wants a clean x-key; we keep label short
   const chartData = useMemo(
-    () =>
-      filtered.map((p) => ({
-        ...p,
-        t: formatDate(p.createdAt),
-        avgPosition: p.avgPosition ?? undefined,
-      })),
+    () => filtered.map((p) => ({
+      ...p,
+      t: formatDate(p.createdAt),
+      avgPosition: p.avgPosition ?? undefined,
+    })),
     [filtered]
   );
 
-  if (loading) return <div className="rounded-xl border p-4 text-sm text-gray-600">Chargement…</div>;
-  if (err) return <div className="rounded-xl border p-4 text-sm text-red-600">{err}</div>;
-  if (data.length === 0)
-    return <div className="rounded-xl border p-4 text-sm text-gray-600">Aucun run pour le moment.</div>;
+  // All states render inside the same card shell
+  const renderContent = () => {
+    if (loading) return (
+      <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+        Chargement…
+      </div>
+    );
+    if (err) return (
+      <div style={{ fontSize: "0.82rem", color: "#c0291e", fontFamily: "var(--font-mono)" }}>
+        {err}
+      </div>
+    );
+    if (data.length === 0) return (
+      <div style={{
+        background: "var(--bg-raised)",
+        border: "1.5px solid var(--border)",
+        borderRadius: "var(--radius-md)",
+        padding: "1rem 1.5rem",
+        fontSize: "0.82rem",
+        color: "var(--text-muted)",
+        fontFamily: "var(--font-mono)",
+      }}>
+        Aucun run pour le moment.
+      </div>
+    );
+
+    return (
+      <div style={{
+        background: "var(--bg-raised)",
+        border: "1.5px solid var(--border)",
+        borderRadius: "var(--radius-md)",
+        padding: "1.25rem",
+      }}>
+        <div style={{ height: 320 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="t" tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "var(--text-muted)" }} interval="preserveStartEnd" />
+              <YAxis yAxisId="left" domain={[0, 100]} tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "var(--text-muted)" }} />
+              <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tick={{ fontSize: 11, fontFamily: "var(--font-mono)", fill: "var(--text-muted)" }} />
+              <Tooltip contentStyle={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", borderRadius: "var(--radius-sm)", border: "1.5px solid var(--border)" }} />
+              <Legend wrapperStyle={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem" }} />
+              <Line yAxisId="left" type="monotone" dataKey="runScore" name="Score global" stroke="var(--accent)" strokeWidth={2} dot={false} />
+              <Line yAxisId="right" type="monotone" dataKey="mentionRate" name="Mention rate (%)" stroke="#0d7a4e" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <p style={{ marginTop: "0.75rem", fontSize: "0.7rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+          Note: les résultats peuvent varier d'un jour à l'autre selon le modèle et le prompt set.
+        </p>
+      </div>
+    );
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div style={cardStyle}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", marginBottom: "1.25rem" }}>
         <div>
-          <div className="text-sm font-medium">Évolution dans le temps</div>
-          <div className="text-xs text-gray-600">Score global & mention rate (par engine)</div>
+          <div style={titleStyle}>Évolution dans le temps</div>
+          <div style={subtitleStyle}>Score global & mention rate (par engine)</div>
         </div>
-
         <select
-          className="rounded-md border px-3 py-2 text-sm"
           value={engine}
           onChange={(e) => setEngine(e.target.value as any)}
+          style={{ width: "auto", fontSize: "0.78rem", padding: "0.5rem 2rem 0.5rem 0.8rem" }}
         >
           <option value="ALL">Tous</option>
           <option value="OPENAI">OpenAI</option>
@@ -102,25 +161,7 @@ export default function ProjectTrends({ projectId }: { projectId: string }) {
         </select>
       </div>
 
-      <div className="rounded-xl border p-4">
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="t" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
-              <YAxis yAxisId="left" domain={[0, 100]} tick={{ fontSize: 12 }} />
-              <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="runScore" name="Score global" dot={false} />
-              <Line yAxisId="right" type="monotone" dataKey="mentionRate" name="Mention rate (%)" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        <p className="mt-2 text-xs text-gray-500">
-          Note: les résultats peuvent varier d’un jour à l’autre selon le modèle et le prompt set.
-        </p>
-      </div>
+      {renderContent()}
     </div>
   );
 }

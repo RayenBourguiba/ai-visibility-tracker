@@ -19,10 +19,7 @@ export default async function RunPage({
     where: { id },
     include: {
       project: true,
-      results: {
-        include: { prompt: true },
-        orderBy: { createdAt: "asc" },
-      },
+      results: { include: { prompt: true }, orderBy: { createdAt: "asc" } },
     },
   });
 
@@ -46,146 +43,457 @@ export default async function RunPage({
     );
   })();
 
-  const allCompetitors = run.results
-    .flatMap((r) =>
-      Array.isArray(r.competitors) ? (r.competitors as any[]) : [],
-    )
-    .map(String);
-
-  /* const topCompetitors = Object.entries(
-    allCompetitors.reduce<Record<string, number>>((acc, c) => {
-      acc[c] = (acc[c] || 0) + 1;
-      return acc;
-    }, {}),
-  )
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8); */
+  const statusColor =
+    run.status === "SUCCESS"
+      ? { bg: "#e0f7ee", color: "#0d7a4e" }
+      : run.status === "FAILED"
+        ? { bg: "#ffe8e8", color: "#c0291e" }
+        : { bg: "#fff3e0", color: "#b85c00" };
 
   return (
-    <main className="mx-auto max-w-6xl p-6">
-      <div className="flex items-start justify-between gap-6">
+    <main
+      style={{ maxWidth: "960px", margin: "0 auto", padding: "3rem 2rem 5rem" }}
+    >
+      {/* ── Header ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "1.5rem",
+          marginBottom: "2.5rem",
+        }}
+      >
         <div>
-          <h1 className="text-2xl font-semibold">Run — {run.engine}</h1>
-          <p className="mt-1 text-gray-600">
-            {run.project.brandName} •{" "}
-            <span className="font-mono">{run.project.domain}</span> •{" "}
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "2rem",
+              fontWeight: 800,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.03em",
+            }}
+          >
+            Run — {run.engine}
+          </h1>
+          <p
+            style={{
+              marginTop: "0.35rem",
+              fontSize: "0.78rem",
+              color: "var(--text-secondary)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {run.project.brandName} • {run.project.domain} •{" "}
             {new Date(run.createdAt).toLocaleString()}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.6rem",
+            flexShrink: 0,
+          }}
+        >
           <ExportButtons runId={run.id} />
           <Link
             href={`/runs/${run.id}/recommendations`}
-            className="rounded-md bg-black px-4 py-2 text-sm text-white"
+            className="btn btn-primary"
+            style={{ fontSize: "0.78rem" }}
           >
             Recommendations
           </Link>
           <Link
             href={`/projects/${run.projectId}`}
-            className="rounded-md border px-4 py-2 text-sm"
+            className="btn btn-ghost"
+            style={{ fontSize: "0.78rem" }}
           >
             ← Projet
           </Link>
-        </div>{" "}
+        </div>
       </div>
 
-      <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border p-4">
-          <div className="text-sm text-gray-600">Mention rate</div>
-          <div className="mt-1 text-2xl font-semibold">{mentionRate}%</div>
-        </div>
-        <div className="rounded-xl border p-4">
-          <div className="text-sm text-gray-600">Position moyenne (approx)</div>
-          <div className="mt-1 text-2xl font-semibold">{avgPos ?? "—"}</div>
-        </div>
-        <div className="rounded-xl border p-4">
-          <div className="text-sm text-gray-600">Status</div>
-          <div className="mt-1 text-2xl font-semibold">{run.status}</div>
-        </div>
-        <div className="rounded-xl border p-4">
-          <div className="text-sm text-gray-600">Score global (0-100)</div>
-          <div className="mt-1 text-2xl font-semibold">{runScore}</div>
-        </div>
-      </section>
+      {/* ── KPI Cards ── */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "1rem",
+          marginBottom: "2rem",
+        }}
+      >
+        {[
+          { label: "Mention rate", value: `${mentionRate}%` },
+          { label: "Position moyenne", value: avgPos ?? "—" },
+          { label: "Score global", value: runScore },
+          { label: "Status", value: run.status, style: statusColor },
+        ].map(({ label, value, style }) => (
+          <div
+            key={label}
+            style={{
+              background: "var(--bg-surface)",
+              border: "1.5px solid var(--border)",
+              borderRadius: "var(--radius-lg)",
+              padding: "1.25rem 1.5rem",
+              boxShadow: "var(--shadow-sm)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "0.62rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                color: "var(--text-muted)",
+                fontFamily: "var(--font-mono)",
+                marginBottom: "0.6rem",
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                fontSize: "2rem",
+                fontWeight: 800,
+                fontFamily: "var(--font-display)",
+                letterSpacing: "-0.03em",
+                lineHeight: 1,
+                ...(style
+                  ? {
+                      display: "inline-block",
+                      background: style.bg,
+                      color: style.color,
+                      borderRadius: "var(--radius-sm)",
+                      padding: "0.2rem 0.75rem",
+                      fontSize: "1rem",
+                      fontFamily: "var(--font-mono)",
+                      fontWeight: 700,
+                    }
+                  : { color: "var(--text-primary)" }),
+              }}
+            >
+              {String(value)}
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border p-4">
-          <h3 className="text-sm font-medium">
-            Concurrents les plus fréquents (avant la marque)
-          </h3>
-          <div className="mt-3 flex flex-wrap gap-2">
+      {/* ── Competitors + Recommendations ── */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "1rem",
+          marginBottom: "2rem",
+        }}
+      >
+        {/* Competitors */}
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1.5px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "1.5rem",
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "0.95rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "1rem",
+            }}
+          >
+            Concurrents fréquents
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             {topCompetitors.length === 0 ? (
-              <span className="text-sm text-gray-600">—</span>
+              <span
+                style={{
+                  fontSize: "0.82rem",
+                  color: "var(--text-muted)",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                —
+              </span>
             ) : (
               topCompetitors.map((c) => (
                 <span
                   key={c.name}
-                  className="rounded-full border px-3 py-1 text-sm"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.35rem",
+                    background: "var(--bg-raised)",
+                    border: "1.5px solid var(--border)",
+                    borderRadius: "99px",
+                    padding: "0.3rem 0.85rem",
+                    fontSize: "0.72rem",
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: 600,
+                    color: "var(--text-secondary)",
+                  }}
                 >
-                  {c.name} <span className="text-gray-500">({c.count})</span>
+                  {c.name}
+                  <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>
+                    ({c.count})
+                  </span>
                 </span>
               ))
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border p-4">
-          <h3 className="text-sm font-medium">Recommandations (extrait)</h3>
-          <ul className="mt-3 space-y-2 text-sm">
-            {run.results[0]?.recommendations &&
-            Array.isArray(run.results[0].recommendations) ? (
-              (run.results[0].recommendations as any[])
-                .slice(0, 5)
+        {/* Recommendations */}
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1.5px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "1.5rem",
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "0.95rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "1rem",
+            }}
+          >
+            Recommandations (extrait)
+          </div>
+          {run.results[0]?.recommendations &&
+          Array.isArray(run.results[0].recommendations) ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.6rem",
+              }}
+            >
+              {(run.results[0].recommendations as any[])
+                .slice(0, 4)
                 .map((rec, idx) => (
-                  <li key={idx} className="rounded-lg border p-3">
-                    <div className="font-medium">{String(rec.title)}</div>
-                    <div className="mt-1 text-gray-600">
+                  <div
+                    key={idx}
+                    style={{
+                      background: "var(--bg-raised)",
+                      border: "1.5px solid var(--border)",
+                      borderRadius: "var(--radius-md)",
+                      padding: "0.85rem 1rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "0.82rem",
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                        marginBottom: "0.25rem",
+                      }}
+                    >
+                      {String(rec.title)}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "0.7rem",
+                        color: "var(--text-muted)",
+                        fontFamily: "var(--font-mono)",
+                      }}
+                    >
                       Impact: {String(rec.impact)} • Effort:{" "}
                       {String(rec.effort)}
                     </div>
-                    {Array.isArray(rec.actions) && rec.actions.length ? (
-                      <ul className="mt-2 list-disc pl-5 text-gray-700">
-                        {rec.actions.slice(0, 3).map((a: any, i: number) => (
-                          <li key={i}>{String(a)}</li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </li>
-                ))
-            ) : (
-              <li className="text-gray-600">—</li>
-            )}
-          </ul>
-          <p className="mt-2 text-xs text-gray-500">
-            (On affichera bientôt une page “Recommendations” consolidée sur tout
-            le run.)
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <span
+              style={{
+                fontSize: "0.82rem",
+                color: "var(--text-muted)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              —
+            </span>
+          )}
+          <p
+            style={{
+              marginTop: "0.75rem",
+              fontSize: "0.68rem",
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            Une page "Recommendations" consolidée arrive bientôt.
           </p>
         </div>
-      </section>
+      </div>
 
-      <section className="mt-8">
-        <h2 className="text-lg font-medium">Résultats par prompt</h2>
-        <div className="mt-3 overflow-hidden rounded-xl border">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left">
-              <tr>
-                <th className="px-4 py-3">Catégorie</th>
-                <th className="px-4 py-3">Prompt</th>
-                <th className="px-4 py-3">Mention</th>
-                <th className="px-4 py-3">Position</th>
-                <th className="px-4 py-3">Contexte</th>
+      {/* ── Results Table ── */}
+      <div style={{ marginBottom: "2rem" }}>
+        <div
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "1rem",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            marginBottom: "1rem",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Résultats par prompt
+        </div>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1.5px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            overflow: "hidden",
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.82rem",
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  background: "var(--bg-raised)",
+                  borderBottom: "1.5px solid var(--border)",
+                }}
+              >
+                {["Catégorie", "Prompt", "Mention", "Position", "Contexte"].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      style={{
+                        textAlign: "left",
+                        padding: "0.9rem 1.25rem",
+                        fontSize: "0.6rem",
+                        fontWeight: 700,
+                        color: "var(--text-muted)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                        fontFamily: "var(--font-mono)",
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
-              {run.results.map((r) => (
-                <tr key={r.id} className="border-t align-top">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                    {r.prompt.category}
+              {run.results.map((r, i) => (
+                <tr
+                  key={r.id}
+                  className="run-result-row"
+                  style={{
+                    borderTop: i === 0 ? "none" : "1px solid var(--border)",
+                  }}
+                >
+                  {" "}
+                  <td
+                    style={{ padding: "0.9rem 1.25rem", verticalAlign: "top" }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.62rem",
+                        fontWeight: 700,
+                        padding: "0.25rem 0.65rem",
+                        borderRadius: "99px",
+                        background: "var(--bg-raised)",
+                        border: "1.5px solid var(--border)",
+                        color: "var(--text-secondary)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {r.prompt.category}
+                    </span>
                   </td>
-                  <td className="px-4 py-3">{r.prompt.text}</td>
-                  <td className="px-4 py-3">{r.isMentioned ? "✅" : "—"}</td>
-                  <td className="px-4 py-3">{r.position ?? "—"}</td>
-                  <td className="px-4 py-3 max-w-md">
+                  <td
+                    style={{
+                      padding: "0.9rem 1.25rem",
+                      color: "var(--text-secondary)",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.78rem",
+                      lineHeight: 1.55,
+                      verticalAlign: "top",
+                      maxWidth: "280px",
+                    }}
+                  >
+                    {r.prompt.text}
+                  </td>
+                  <td
+                    style={{
+                      padding: "0.9rem 1.25rem",
+                      verticalAlign: "top",
+                      textAlign: "center",
+                    }}
+                  >
+                    {r.isMentioned ? (
+                      <span
+                        style={{
+                          fontSize: "0.7rem",
+                          fontWeight: 700,
+                          color: "#0d7a4e",
+                          background: "#e0f7ee",
+                          borderRadius: "99px",
+                          padding: "0.2rem 0.6rem",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        ✓ oui
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: "0.7rem",
+                          color: "var(--text-muted)",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        —
+                      </span>
+                    )}
+                  </td>
+                  <td
+                    style={{
+                      padding: "0.9rem 1.25rem",
+                      verticalAlign: "top",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.82rem",
+                      color: "var(--text-primary)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {r.position ?? "—"}
+                  </td>
+                  <td
+                    style={{
+                      padding: "0.9rem 1.25rem",
+                      verticalAlign: "top",
+                      color: "var(--text-secondary)",
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.75rem",
+                      lineHeight: 1.5,
+                      maxWidth: "220px",
+                    }}
+                  >
                     {Array.isArray(r.contextSnippets) &&
                     r.contextSnippets.length
                       ? String(r.contextSnippets[0])
@@ -196,23 +504,73 @@ export default async function RunPage({
             </tbody>
           </table>
         </div>
+      </div>
 
-        <details className="mt-6 rounded-xl border p-4">
-          <summary className="cursor-pointer text-sm font-medium">
-            Voir les réponses brutes
-          </summary>
-          <div className="mt-4 space-y-4">
-            {run.results.map((r) => (
-              <div key={r.id} className="rounded-lg border p-3">
-                <div className="text-xs text-gray-600">{r.prompt.text}</div>
-                <pre className="mt-2 whitespace-pre-wrap text-sm">
-                  {r.rawAnswer}
-                </pre>
+      {/* ── Raw answers ── */}
+      <details
+        style={{
+          background: "var(--bg-surface)",
+          border: "1.5px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+          padding: "1.25rem 1.5rem",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      >
+        <summary
+          style={{
+            cursor: "pointer",
+            fontSize: "0.82rem",
+            fontWeight: 700,
+            fontFamily: "var(--font-mono)",
+            color: "var(--text-secondary)",
+            userSelect: "none",
+          }}
+        >
+          Voir les réponses brutes
+        </summary>
+        <div
+          style={{
+            marginTop: "1.25rem",
+            display: "flex",
+            flexDirection: "column",
+            gap: "1rem",
+          }}
+        >
+          {run.results.map((r) => (
+            <div
+              key={r.id}
+              style={{
+                background: "var(--bg-raised)",
+                border: "1.5px solid var(--border)",
+                borderRadius: "var(--radius-md)",
+                padding: "1rem 1.25rem",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "var(--text-muted)",
+                  fontFamily: "var(--font-mono)",
+                  marginBottom: "0.6rem",
+                }}
+              >
+                {r.prompt.text}
               </div>
-            ))}
-          </div>
-        </details>
-      </section>
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  fontSize: "0.78rem",
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.6,
+                }}
+              >
+                {r.rawAnswer}
+              </pre>
+            </div>
+          ))}
+        </div>
+      </details>
     </main>
   );
 }
